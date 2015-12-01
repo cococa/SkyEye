@@ -2,15 +2,23 @@ package main
 
 import (
 	"fmt"
+	// "io"
 	"io/ioutil"
 	"net/http"
 	// "net/url"
-	"crypto/md5"
+	// "crypto/md5"
 	// "encoding/hex"
 	// "strconv"
 	"encoding/hex"
 	"strings"
 	// "unsafe"
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/base64"
+)
+
+const (
+	base64Table = "123QRSTUabcdVWXYZHijKLAWDCABDstEFGuvwxyzGHIJklmnopqr234560178912"
 )
 
 //  http://help.aliyun.com/document_detail/sls/api/errors.html
@@ -26,32 +34,51 @@ func httpGet() {
 		// handle error
 	}
 	assID := "L5ASLE8ue7wTNBxc"
+	accessKey := "Y5Axn5jAZxPCTFY1sXwZcDxx6g3SqS"
 
 	VERB := RequestMethod
 	CONTENT_MD5 := ""
-	CONTENT_TYPE := "application/x-protobuf"
-	DATE := "Tue, 01 Dec 2015 03:58:50 GMT"                                                                    //Mon, 3 Jan 2010 08:33:47 GMT
-	CanonicalizedSLSHeaders := "x-sls-apiversion:0.4.0\nx-sls-bodyrawsize:50\nx-sls-signaturemethod:hmac-sha1" //x-sls-apiversion:0.4.0\nx-sls-bodyrawsize:50\nx-sls-signaturemethod:hmac-sha1
-	CanonicalizedResource := "/logstores/log-monitor"                                                          ///logstores/app_log
+	CONTENT_TYPE := ""                                                                                        //"application/x-protobuf"
+	DATE := "Tue, 01 Dec 2015 09:30:20 GMT"                                                                   //Mon, 3 Jan 2010 08:33:47 GMT
+	CanonicalizedSLSHeaders := "x-sls-apiversion:0.4.0\nx-sls-bodyrawsize:0\nx-sls-signaturemethod:hmac-sha1" //x-sls-apiversion:0.4.0\nx-sls-bodyrawsize:50\nx-sls-signaturemethod:hmac-sha1
+	CanonicalizedResource := "/logstores/log-monitor"                                                         ///logstores/app_log
 
 	SignString := VERB + "\n" + CONTENT_MD5 + "\n" + CONTENT_TYPE + "\n" + DATE + "\n" + CanonicalizedSLSHeaders + "\n" + CanonicalizedResource
+	fmt.Println(SignString)
 
-	md5Ctx := md5.New()
-	md5Ctx.Write([]byte(SignString))
-	cipherStr := md5Ctx.Sum(nil)
-	xx := hex.EncodeToString(cipherStr)
-	fmt.Print(xx)
+	// fmt.Println(SignString)
 
-	yy := "SLS " + assID + ":" + xx
+	// md5Ctx := md5.New()
+	// md5Ctx.Write([]byte(SignString))
+	// cipherStr := md5Ctx.Sum(nil)
+	// xx := sha1(SignString, accessKey)
+	mkey := []byte(accessKey)
+	mac := hmac.New(sha1.New, mkey)
+	mac.Write([]byte(SignString))
+	xx := hex.EncodeToString(mac.Sum(nil))
+
+	fmt.Println(xx)
+
+	// aaa := base64Encode([]byte(xx))
+	// xxx := hex.EncodeToString(aaa)
+
+	// fmt.Println(xxx)
+
+	sssss := base64.StdEncoding.EncodeToString([]byte(xx))
+	fmt.Println(sssss)
+
+	yy := "SLS " + assID + ":" + sssss
+
+	fmt.Println(yy)
 
 	req.Header.Set("Authorization", yy) //签名内容
-	req.Header.Set("Content-Length", "0")
+	// req.Header.Set("Content-Length", "0")
 	req.Header.Set("Content-MD5", "")
-	req.Header.Set("Content-Type", "application/x-protobuf") //RFC 2616中定义得HTTP请求Body类型。目前SLS API请求只支持application/x-protobuf。如果没有Body部分，则不需要提供该请求头。
+	req.Header.Set("Content-Type", "") //RFC 2616中定义得HTTP请求Body类型。目前SLS API请求只支持application/x-protobuf。如果没有Body部分，则不需要提供该请求头。
 	req.Header.Set("Date", DATE)
 	req.Header.Set("Host", "log-monitor.cn-hangzhou.sls.aliyuncs.com")
 	req.Header.Set("x-sls-apiversion", "0.4.0")
-	req.Header.Set("x-sls-bodyrawsize", "50")
+	req.Header.Set("x-sls-bodyrawsize", "0")
 	// req.Header.Set("x-sls-compresstype", "111")
 	// req.Header.Set("x-sls-date", DATE)
 	req.Header.Set("x-sls-signaturemethod", "hmac-sha1") //签名计算方式，目前仅支持”hmac-sha1”。
@@ -66,6 +93,19 @@ func httpGet() {
 	}
 
 	fmt.Println(string(body))
+}
+
+// func sha1(s string, key string) string {
+// 	mkey := []byte(key)
+// 	mac := hmac.New(sha1.New, mkey)
+// 	mac.Write([]byte(s))
+// 	return hex.EncodeToString(mac.Sum(nil))
+
+// }
+
+func base64Encode(src []byte) []byte {
+	var coder = base64.NewEncoding(base64Table)
+	return []byte(coder.EncodeToString(src))
 }
 
 // func B2S(buf []byte) string {
