@@ -1,29 +1,34 @@
 package main
 
 import (
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
-	// "io"
 	"io/ioutil"
 	"net/http"
+	"strings"
+	"time"
 	// "net/url"
 	// "crypto/md5"
 	// "encoding/hex"
 	// "strconv"
-	"encoding/hex"
-	"strings"
 	// "unsafe"
-	"crypto/hmac"
-	"crypto/sha1"
-	"encoding/base64"
+	// "io"
 )
 
 const (
 	base64Table = "123QRSTUabcdVWXYZHijKLAWDCABDstEFGuvwxyzGHIJklmnopqr234560178912"
+	assID       = "L5ASLE8ue7wTNBxc"
+	accessKey   = "Y5Axn5jAZxPCTFY1sXwZcDxx6g3SqS"
 )
 
 //  http://help.aliyun.com/document_detail/sls/api/errors.html
 
 func httpGet() {
+
+	fmt.Println(getDateTime())
 
 	RequestMethod := "GET"
 
@@ -33,21 +38,18 @@ func httpGet() {
 	if err != nil {
 		// handle error
 	}
-	assID := "L5ASLE8ue7wTNBxc"
-	accessKey := "Y5Axn5jAZxPCTFY1sXwZcDxx6g3SqS"
 
 	VERB := RequestMethod
 	CONTENT_MD5 := ""
 	CONTENT_TYPE := ""                                                                                        //"application/x-protobuf"
-	DATE := "Tue, 01 Dec 2015 09:30:20 GMT"                                                                   //Mon, 3 Jan 2010 08:33:47 GMT
+	DATE := getDateTime()                                                                                     //Mon, 3 Jan 2010 08:33:47 GMT
 	CanonicalizedSLSHeaders := "x-sls-apiversion:0.4.0\nx-sls-bodyrawsize:0\nx-sls-signaturemethod:hmac-sha1" //x-sls-apiversion:0.4.0\nx-sls-bodyrawsize:50\nx-sls-signaturemethod:hmac-sha1
-	CanonicalizedResource := "/logstores/log-monitor"                                                         ///logstores/app_log
+	CanonicalizedResource := "/logstores"                                                                     ///log-monitor                                              ///logstores/app_log
 
 	SignString := VERB + "\n" + CONTENT_MD5 + "\n" + CONTENT_TYPE + "\n" + DATE + "\n" + CanonicalizedSLSHeaders + "\n" + CanonicalizedResource
 	fmt.Println(SignString)
 
 	// fmt.Println(SignString)
-
 	// md5Ctx := md5.New()
 	// md5Ctx.Write([]byte(SignString))
 	// cipherStr := md5Ctx.Sum(nil)
@@ -111,6 +113,15 @@ func base64Encode(src []byte) []byte {
 // func B2S(buf []byte) string {
 // 	return *(*string)(unsafe.Pointer(&buf))
 // }
+
+/**
+*  %a, %d %b %Y %H:%M:%S GMT
+*  Mon, 3 Jan 2010 08:33:47 GMT
+ */
+func getDateTime() string {
+	// time.Now().Format("2006-01-02 15:04:05")
+	return time.Now().UTC().Format("Mon, 2 Jan 2006 03:04:05 GMT")
+}
 
 func main() {
 	httpGet()
